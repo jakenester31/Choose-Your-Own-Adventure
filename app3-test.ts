@@ -12,28 +12,49 @@ async function query(message:string) {
 }
 
 class Hook {
-
+    private readonly callback: Function
+    constructor(callback:Function) {
+        this.callback = callback;
+    }
+    attach(target:BaseBranch,position:Hook.Types) {
+        target.hook(position,this.callback);
+    }
 }
 
 namespace Hook {
-    export enum Types { BEFORE, AFTER }
-    export type BEFORE = Types.BEFORE
-    export type AFTER = Types.AFTER
+    export enum Types { BEFORE = 'BEFORE', AFTER = 'AFTER' }
+    export type BEFORE = Types.BEFORE;
+    export const BEFORE = Types.BEFORE;
+    export type AFTER = Types.AFTER;
+    export const AFTER = Types.AFTER;
 }
 
-class Branch {
+abstract class BaseBranch {
+    private hooks: Branch.Hooks = { [Hook.BEFORE]: [], [Hook.AFTER]: [] };
+    hook(position:Hook.Types,callback:Function): BaseBranch {
+        this.hooks[position].push(callback);
+        return this
+    }
+    abstract next(): BaseBranch
+    abstract _next(): void
+}
+
+abstract class PublicBranch extends BaseBranch {
+    abstract readonly message: string
+}
+
+abstract class PrivateBranch extends BaseBranch {
+
+}
+
+class Branch extends PublicBranch {
     readonly message: string
-    private hooks = {
-
-    }
     constructor(message:string) {
-        this.message = message
-    }
-    hook(position:Hook.Types,callback:Function) {
-
+        super();
+        this.message = message;
     }
 }
 
 namespace Branch {
-    type 
+    export type Hooks = Record<Hook.Types,Function[]>
 }
