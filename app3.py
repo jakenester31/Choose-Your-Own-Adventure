@@ -210,25 +210,25 @@ if __name__ == "__main__":
     items = ['apple','knife','blender','gun','bazooka','banana']
     inventory = []
     loops = 0
-    story = {
-        'take': branch(
-            f_string(
-                '$takeYou look at the table $againand see $items. Take...', {
-                    'take':lambda res, worked: f'You took {listToString([res],True)}. ' if res in inventory else '',
-                    'again':lambda res: 'again ' if res in inventory else '',
-                    'items':lambda _: listToString(items,True) or 'nothing'
-                }
-            ),
-            {wrap(items,counter,1):'take','nothing':'end'},
-            {'after':lambda res, worked: (items.remove(res), inventory.append(res)) if res in items and worked else None}
-        ),
+    # story = {
+    #     'take': branch(
+    #         f_string(
+    #             '$takeYou look at the table $againand see $items. Take...', {
+    #                 'take':lambda res, worked: f'You took {listToString([res],True)}. ' if res in inventory else '',
+    #                 'again':lambda res: 'again ' if res in inventory else '',
+    #                 'items':lambda _: listToString(items,True) or 'nothing'
+    #             }
+    #         ),
+    #         {wrap(items,counter,1):'take','nothing':'end'},
+    #         {'after':lambda res, worked: (items.remove(res), inventory.append(res)) if res in items and worked else None}
+    #     ),
         
-        'end': end(f_string('you have $items',{'items':lambda _: listToString(inventory,True) or 'nothing'}))
-    }
+    #     'end': end(f_string('you have $items',{'items':lambda _: listToString(inventory,True) or 'nothing'}))
+    # }
     
     infTest = {
         'a': branch('AAA',{},{'before':lambda:reroute('b')}),
-        'b': branch('BBB',{},{'before':lambda:reroute('a')})
+        'b': branch('BBB',{},{'after':lambda:reroute('a')})
     }
 
 
@@ -237,6 +237,12 @@ if __name__ == "__main__":
     # conditional option: check if condition true then reroute from chosen branch elsewhere
     # make the results able to map to lambdas, lambdas then return the branch
 
-    runner = run(story,'take')
+
+    # story = {
+    #     'start.a':branch('Hello?',{'':'start.b'}),
+    #     'start.b':branch('How are you?',{})
+    # }
+
+    runner = run(infTest,'a')
     
     # look down
