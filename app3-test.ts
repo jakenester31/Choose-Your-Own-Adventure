@@ -14,20 +14,17 @@ async function query(message:string): Promise<string> {
 class Engine {
     private readonly tree: Engine.Tree
 
-    private key: BaseBranch.Name
-    private value: BaseBranch
+    declare private branchName: BaseBranch.Name
+    declare private branch: BaseBranch
     private update(val:BaseBranch.Name) {
-        this.key = val;
-        this.value = this.tree[val];
+        this.branchName = val;
+        this.branch = this.tree[val];
     }
 
     private routeTo: BaseBranch.pName = null
 
     constructor(tree:Engine.Tree) {
         this.tree = tree;
-        // To tell typescript the fuck the hell off
-        this.key = ''
-        this.value = {} as BaseBranch
     }
 
     async begin(branchName: BaseBranch.Name): Promise<void> {
@@ -38,14 +35,19 @@ class Engine {
             this.update(this.routeTo);
 
             let ret: string
-            if (this.value instanceof PublicBranch)
-                ret = await query(this.value.message)
+            if (this.branch.Flags & BaseBranch.Flags.WAITFORINPUT) {
+                ret = await query(this.branch.message)
+                this.routeTo = this.branch._next(ret);
+            }
         } 
     }
 }
 
 namespace Engine {
     export type Tree = Record<string,BaseBranch>
+}
+namespace Request {
+    export type displayMessage = String
 }
 
 
@@ -76,11 +78,19 @@ abstract class BaseBranch {
     }
     abstract next(data:any): typeof this
     abstract _next(data:any): BaseBranch.pName
+    abstract Flags: BaseBranch.Flags
+
+
+    // request(method): Request.displayMessage
+    // request(method): Request.displayMessage {
+    //     return ""
+    // }
 }
 
 namespace BaseBranch {
     export type Name = string
     export type pName = string|null
+    export enum Flags { WAITFORINPUT = 1 }
 }
 
 abstract class PublicBranch extends BaseBranch {
@@ -103,8 +113,24 @@ class Branch extends PublicBranch {
         return this
     }
     _next(_:undefined) { return this.nextNode }
+    Flags: BaseBranch.Flags = BaseBranch.Flags.WAITFORINPUT
+}
+
+function branch(message:string) {
+    return new Branch(message);
 }
 
 namespace Branch {
     export type Hooks = Record<Hook.Types,Function[]>
 }
+
+
+// TEST
+const story: Engine.Tree = {
+    "start": branch("Hello world")
+        .next("next"),
+    "next": branch("Goodbye world")
+}
+
+const engine: Engine = new Engine(story);
+engine.begin("start");
